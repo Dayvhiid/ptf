@@ -29,6 +29,9 @@ import tesla from "./company/tesla.png";
 import carrent from "./carrent.png";
 import jobit from "./jobit.png";
 import tripguide from "./tripguide.png";
+import realestate from "./realestate.png";
+import career from "./career.jpg";
+import opticare from "./opticare.jpg";
 
 export {
   logo,
@@ -59,4 +62,7 @@ export {
   carrent,
   jobit,
   tripguide,
+  realestate,
+  career,
+  opticare
 };
