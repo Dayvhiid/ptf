@@ -34,11 +34,12 @@ jobs:
           printf '%s' "$VPS_SSH_KEY" | tr -d '\r' > ~/.ssh/aws.pem
           chmod 600 ~/.ssh/aws.pem
           ssh-keygen -lf ~/.ssh/aws.pem
-          ssh-keyscan -p "${{ secrets.VPS_PORT }}" -H "${{ secrets.VPS_HOST }}" >> ~/.ssh/known_hosts
 
       - name: Create target directory on VPS
         run: |
           ssh -i ~/.ssh/aws.pem \
+            -o StrictHostKeyChecking=no \
+            -o UserKnownHostsFile=/dev/null \
             -p "${{ secrets.VPS_PORT }}" \
             "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}" \
             "mkdir -p '${{ secrets.VPS_PATH }}'"
@@ -46,21 +47,25 @@ jobs:
       - name: Sync project files to VPS
         run: |
           ssh -i ~/.ssh/aws.pem \
+            -o StrictHostKeyChecking=no \
+            -o UserKnownHostsFile=/dev/null \
             -p "${{ secrets.VPS_PORT }}" \
             "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}" \
             "mkdir -p '${{ secrets.VPS_PATH }}/dist'"
 
           rsync -az --delete \
-            -e "ssh -i ~/.ssh/aws.pem -p ${{ secrets.VPS_PORT }}" \
+            -e "ssh -i ~/.ssh/aws.pem -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p ${{ secrets.VPS_PORT }}" \
             dist/ "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:${{ secrets.VPS_PATH }}/dist/"
 
           rsync -az --delete \
-            -e "ssh -i ~/.ssh/aws.pem -p ${{ secrets.VPS_PORT }}" \
+            -e "ssh -i ~/.ssh/aws.pem -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p ${{ secrets.VPS_PORT }}" \
             nginx.conf "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:${{ secrets.VPS_PATH }}/nginx.conf"
 
       - name: Restart static site container on VPS
         run: |
           ssh -i ~/.ssh/aws.pem \
+            -o StrictHostKeyChecking=no \
+            -o UserKnownHostsFile=/dev/null \
             -p "${{ secrets.VPS_PORT }}" \
             "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}" << EOF
           cd "${{ secrets.VPS_PATH }}"
