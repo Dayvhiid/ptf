@@ -23,6 +23,15 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # ✅ IMPORTANT: Create .env BEFORE build (Vite needs this at build time)
+      - name: Create .env file
+        run: |
+          cat > .env << EOF
+          VITE_APP_EMAILJS_SERVICE_ID=${{ secrets.VITE_APP_EMAILJS_SERVICE_ID }}
+          VITE_APP_EMAILJS_TEMPLATE_ID=${{ secrets.VITE_APP_EMAILJS_TEMPLATE_ID }}
+          VITE_APP_EMAILJS_PUBLIC_KEY=${{ secrets.VITE_APP_EMAILJS_PUBLIC_KEY }}
+          EOF
+
       - name: Build production assets
         run: npm run build
 
@@ -35,7 +44,7 @@ jobs:
           chmod 600 ~/.ssh/aws.pem
           ssh-keygen -lf ~/.ssh/aws.pem
 
-      - name: Create target directory on VPS
+      - name: Create VPS directory
         run: |
           ssh -i ~/.ssh/aws.pem \
             -o StrictHostKeyChecking=no \
@@ -44,37 +53,34 @@ jobs:
             "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}" \
             "mkdir -p '${{ secrets.VPS_PATH }}'"
 
-      - name: Sync project files to VPS
+      - name: Sync build files to VPS
         run: |
-          ssh -i ~/.ssh/aws.pem \
-            -o StrictHostKeyChecking=no \
-            -o UserKnownHostsFile=/dev/null \
-            -p "${{ secrets.VPS_PORT }}" \
-            "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}" \
-            "mkdir -p '${{ secrets.VPS_PATH }}/dist'"
-
           rsync -az --delete \
             -e "ssh -i ~/.ssh/aws.pem -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p ${{ secrets.VPS_PORT }}" \
             dist/ "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:${{ secrets.VPS_PATH }}/dist/"
 
-          rsync -az --delete \
+          rsync -az \
             -e "ssh -i ~/.ssh/aws.pem -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p ${{ secrets.VPS_PORT }}" \
             nginx.conf "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:${{ secrets.VPS_PATH }}/nginx.conf"
 
-      - name: Restart static site container on VPS
+      - name: Restart Nginx container on VPS
         run: |
           ssh -i ~/.ssh/aws.pem \
             -o StrictHostKeyChecking=no \
             -o UserKnownHostsFile=/dev/null \
             -p "${{ secrets.VPS_PORT }}" \
-            "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}" << EOF
-          cd "${{ secrets.VPS_PATH }}"
+            "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}" << 'EOF'
+
+          cd "${VPS_PATH}"
+
           docker rm -f 3dfolio-app >/dev/null 2>&1 || true
+
           docker run -d \
             --name 3dfolio-app \
             --restart unless-stopped \
             -p 80:80 \
-            -v "${{ secrets.VPS_PATH }}/dist:/usr/share/nginx/html:ro" \
-            -v "${{ secrets.VPS_PATH }}/nginx.conf:/etc/nginx/conf.d/default.conf:ro" \
+            -v "${VPS_PATH}/dist:/usr/share/nginx/html:ro" \
+            -v "${VPS_PATH}/nginx.conf:/etc/nginx/conf.d/default.conf:ro" \
             nginx:1.27-alpine
+
           EOF
