@@ -9,6 +9,7 @@ import { slideIn } from "../utils/motion";
 
 const Contact = () => {
   const formRef = useRef();
+  const resumePdfUrl = "/resume.pdf";
   const [form, setForm] = useState({
     name: "",
     email: "",
@@ -37,7 +38,7 @@ const Contact = () => {
         import.meta.env.VITE_APP_EMAILJS_TEMPLATE_ID,
         {
           from_name: form.name,
-          to_name: "JavaScript Mastery",
+          to_name: "David Dada",
           from_email: form.email,
           to_email: "daviddada360@gmail.com",
           message: form.message,
@@ -114,12 +115,22 @@ const Contact = () => {
             />
           </label>
 
-          <button
-            type='submit'
-            className='bg-tertiary py-3 px-8 rounded-xl outline-none w-fit text-white font-bold shadow-md shadow-primary'
-          >
-            {loading ? "Sending..." : "Send"}
-          </button>
+          <div className='flex flex-wrap gap-4'>
+            <button
+              type='submit'
+              className='bg-tertiary py-3 px-8 rounded-xl outline-none w-fit text-white font-bold shadow-md shadow-primary'
+            >
+              {loading ? "Sending..." : "Send"}
+            </button>
+
+            <a
+              href={resumePdfUrl}
+              download='David-Dada-Resume.pdf'
+              className='inline-flex w-fit items-center justify-center rounded-xl border border-secondary bg-transparent py-3 px-8 font-bold text-white transition-colors duration-300 hover:bg-tertiary'
+            >
+              Download Resume
+            </a>
+          </div>
         </form>
       </motion.div>
 
