@@ -23,7 +23,6 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      # ✅ IMPORTANT: Create .env BEFORE build (Vite needs this at build time)
       - name: Create .env file
         run: |
           cat > .env << EOF
@@ -32,58 +31,48 @@ jobs:
           VITE_APP_EMAILJS_PUBLIC_KEY=${{ secrets.VITE_APP_EMAILJS_PUBLIC_KEY }}
           EOF
 
-      - name: Build production assets
+      - name: Build project
         run: npm run build
 
       - name: Prepare SSH key
-        env:
-          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
         run: |
           mkdir -p ~/.ssh
-          printf '%s' "$VPS_SSH_KEY" | tr -d '\r' > ~/.ssh/aws.pem
+          printf '%s' "${{ secrets.VPS_SSH_KEY }}" | tr -d '\r' > ~/.ssh/aws.pem
           chmod 600 ~/.ssh/aws.pem
-          ssh-keygen -lf ~/.ssh/aws.pem
+          ssh-keyscan -p "${{ secrets.VPS_PORT }}" ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
 
-      - name: Create VPS directory
+      - name: Sync files to VPS
         run: |
-          ssh -i ~/.ssh/aws.pem \
-            -o StrictHostKeyChecking=no \
-            -o UserKnownHostsFile=/dev/null \
-            -p "${{ secrets.VPS_PORT }}" \
+          ssh -i ~/.ssh/aws.pem -p "${{ secrets.VPS_PORT }}" \
             "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}" \
-            "mkdir -p '${{ secrets.VPS_PATH }}'"
+            "mkdir -p /home/ec2-user/ptf"
 
-      - name: Sync build files to VPS
-        run: |
           rsync -az --delete \
-            -e "ssh -i ~/.ssh/aws.pem -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p ${{ secrets.VPS_PORT }}" \
-            dist/ "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:${{ secrets.VPS_PATH }}/dist/"
+            -e "ssh -i ~/.ssh/aws.pem -p ${{ secrets.VPS_PORT }}" \
+            dist/ \
+            "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/home/ec2-user/ptf/dist/"
 
-          rsync -az \
-            -e "ssh -i ~/.ssh/aws.pem -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p ${{ secrets.VPS_PORT }}" \
-            nginx.conf "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:${{ secrets.VPS_PATH }}/nginx.conf"
+          rsync -az --delete \
+            -e "ssh -i ~/.ssh/aws.pem -p ${{ secrets.VPS_PORT }}" \
+            nginx.conf \
+            "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/home/ec2-user/ptf/nginx.conf"
 
-      
-      - name: Restart Nginx container on VPS
+      - name: Restart container
         run: |
           ssh -i ~/.ssh/aws.pem \
-            -o StrictHostKeyChecking=no \
-            -o UserKnownHostsFile=/dev/null \
             -p "${{ secrets.VPS_PORT }}" \
-            "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}" << EOF
+            "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}" << 'EOF'
 
-          VPS_PATH="${{ secrets.VPS_PATH }}"
+          cd /home/ec2-user/ptf
 
-          cd "$VPS_PATH"
-
-          docker rm -f 3dfolio-app >/dev/null 2>&1 || true
+          docker rm -f 3dfolio-app || true
 
           docker run -d \
             --name 3dfolio-app \
             --restart unless-stopped \
             -p 80:80 \
-            -v "$VPS_PATH/dist:/usr/share/nginx/html:ro" \
-            -v "$VPS_PATH/nginx.conf:/etc/nginx/conf.d/default.conf:ro" \
+            -v /home/ec2-user/ptf/dist:/usr/share/nginx/html:ro \
+            -v /home/ec2-user/ptf/nginx.conf:/etc/nginx/conf.d/default.conf:ro \
             nginx:1.27-alpine
 
-        EOF
+          EOF
