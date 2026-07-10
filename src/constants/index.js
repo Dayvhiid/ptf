@@ -1,4 +1,4 @@
-import {
+﻿import {
   mobile,
   backend,
   creator,
@@ -231,23 +231,6 @@ const projects = [
     source_code_link: "https://www.olaoluwaeyeclinic.com/",
   },
   {
-    name: "Krides Ride-Sharing Platform",
-    description:
-      "Web application that enables users to search for ride options, view estimated fares, and book rides with drivers in their area.",
-    tags: [
-      {
-        name: "PHP(Laravel)",
-        color: "blue-text-gradient",
-      },
-      {
-        name: "restapi",
-        color: "green-text-gradient",
-      },
-    ],
-    image: carrent,
-    source_code_link: "https://github.com/Dayvhiid/Krides",
-  },
-  {
     name: "Career Pilot",
     description:
       "CareerPilot is an AI-powered resume assistant that helps users create, edit, and enhance their resumes using intelligent suggestions and automation. It streamlines the resume-building process, offering personalized advice and formatting to improve users’ chances of landing their desired jobs.",
@@ -267,6 +250,23 @@ const projects = [
     ],
     image: career,
     source_code_link: "http://careerpilot-env.eba-vzqkbw5h.us-east-1.elasticbeanstalk.com/",
+  },
+  {
+    name: "Krides Ride-Sharing Platform",
+    description:
+      "Web application that enables users to search for ride options, view estimated fares, and book rides with drivers in their area.",
+    tags: [
+      {
+        name: "PHP(Laravel)",
+        color: "blue-text-gradient",
+      },
+      {
+        name: "restapi",
+        color: "green-text-gradient",
+      },
+    ],
+    image: carrent,
+    source_code_link: "https://github.com/Dayvhiid/Krides",
   },
   {
     name: "Chishti Private Equity",
