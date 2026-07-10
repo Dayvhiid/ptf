@@ -266,7 +266,7 @@ const projects = [
       },
     ],
     image: career,
-    source_code_link: "https://github.com/Dayvhiid/CareerPilot",
+    source_code_link: "http://careerpilot-env.eba-vzqkbw5h.us-east-1.elasticbeanstalk.com/",
   },
   {
     name: "Chishti Private Equity",
